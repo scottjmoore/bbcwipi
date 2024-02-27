@@ -37,21 +37,13 @@ int main()
     }
 
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, led);
+    userport_init_gpio();
 
-    for (int i=0; i<=7; i++) {
-        gpio_init(i);
-        gpio_set_dir(i, GPIO_OUT);
-    }
-
-    gpio_init(8);
-    gpio_set_dir(8, GPIO_IN);
-    gpio_init(9);
-    gpio_set_dir(9, GPIO_OUT);
-    gpio_put(9,1);
     gpio_set_dir(10, GPIO_OUT);
     gpio_put(10,0);
+    gpio_put(USERPORT_CB1,1);
 
-    char out[256] = "This is some test text sent from the Pi Pico to the BBC Master over the userport!";
+    char out[256] = "This is some test text sent from the Pi Pico to the BBC Master over the userport!\r\n";
     int j = 0;
     while (true) {
         char c = out[j++ % 256];
@@ -59,26 +51,7 @@ int main()
             j = 0;
         }
 
-        while (gpio_get(8) == 0);
-
-        gpio_put(0, c & 1);
-        gpio_put(1, c & 2);
-        gpio_put(2, c & 4);
-        gpio_put(3, c & 8);
-        gpio_put(4, c & 16);
-        gpio_put(5, c & 32);
-        gpio_put(6, c & 64);
-        gpio_put(7, c & 128);
-
-        //printf("%c %2x %d\n",c,c,j);
-
-        gpio_put(9,0);
-        sleep_us(3);
-        gpio_put(9,1);
-
-        while (gpio_get(8) == 1);
-
-        //sleep_us(10000);
+        rxtx_send_byte(c);
     }
 
     int port[256];
