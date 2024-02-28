@@ -2,14 +2,12 @@
 
 void userport_init_gpio(void) {
     
+    gpio_init(USERPORT_CB1);
+    gpio_set_dir(USERPORT_CB1, GPIO_OUT);
+    gpio_init(USERPORT_CB2);
+    gpio_set_dir(USERPORT_CB2, GPIO_IN);
+
     userport_set_dir(GPIO_OUT);
-    gpio_init(8);
-    gpio_set_dir(8, GPIO_IN);
-    gpio_init(9);
-    gpio_set_dir(9, GPIO_OUT);
-    gpio_put(9,1);
-    gpio_set_dir(10, GPIO_OUT);
-    gpio_put(10,0);
 }
 
 void userport_set_dir(int dir) {

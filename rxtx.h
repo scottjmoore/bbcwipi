@@ -10,5 +10,6 @@
 #include "userport.h"
 
 void rxtx_send_byte(char tx_byte);
+void rxtx_send_string(const char *tx_str);
 
 #endif // __RXTX_H__

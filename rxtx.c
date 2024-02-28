@@ -13,8 +13,19 @@ void rxtx_send_byte(char tx_byte) {
         gpio_put(USERPORT_PB7, tx_byte & 128);
 
         gpio_put(USERPORT_CB1,0);
-        sleep_us(3);
+        sleep_us(1);
+        gpio_put(USERPORT_CB1,1);
+        sleep_us(1);
+        gpio_put(USERPORT_CB1,0);
+        sleep_us(1);
         gpio_put(USERPORT_CB1,1);
 
-        while (gpio_get(8) == 1);
+        while (gpio_get(USERPORT_CB2) == 1);
+}
+
+void rxtx_send_string(const char *tx_str) {
+    while (*tx_str) {
+        rxtx_send_byte(*tx_str);
+        tx_str++;
+    }
 }

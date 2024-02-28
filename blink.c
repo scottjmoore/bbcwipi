@@ -43,7 +43,8 @@ int main()
     gpio_put(10,0);
     gpio_put(USERPORT_CB1,1);
 
-    char out[256] = "This is some test text sent from the Pi Pico to the BBC Master over the userport!\r\n";
+    //char out[256] = "This is some test text sent from the Pi Pico to the BBC Master over the userport!\r\n";
+    char out[256] = "abcdefghijklmnopqrstuvwxys 0123456789\r\n";
     int j = 0;
     while (true) {
         char c = out[j++ % 256];
@@ -51,7 +52,8 @@ int main()
             j = 0;
         }
 
-        rxtx_send_byte(c);
+        //rxtx_send_byte(c);
+        rxtx_send_string(out);
     }
 
     int port[256];
