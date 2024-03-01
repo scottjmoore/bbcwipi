@@ -4,52 +4,52 @@ set(PICO_BOARD pico_w)
 include($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 include($ENV{PICO_SDK_PATH}/../pico-extras/external/pico_extras_import.cmake)
 
-project(pifi-firmware VERSION 0.0.0
+project(wipi-firmware VERSION 0.0.0
     LANGUAGES C CXX ASM
 )
 
 pico_sdk_init()
-add_executable(pifi-firmware-release pifi-firmware.c userport.c rxtx.c)
-target_compile_definitions(pifi-firmware-release PRIVATE
+add_executable(wipi-firmware-release wipi-firmware.c userport.c rxtx.c)
+target_compile_definitions(wipi-firmware-release PRIVATE
     DEBUG=0
 )
-target_include_directories(pifi-firmware-release PRIVATE
+target_include_directories(wipi-firmware-release PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
 )
-target_link_libraries(pifi-firmware-release
+target_link_libraries(wipi-firmware-release
     pico_stdlib
     pico_cyw43_arch_none
 )
-pico_enable_stdio_usb(pifi-firmware-release 1)
-pico_enable_stdio_uart(pifi-firmware-release 0)
-pico_add_extra_outputs(pifi-firmware-release)
+pico_enable_stdio_usb(wipi-firmware-release 1)
+pico_enable_stdio_uart(wipi-firmware-release 0)
+pico_add_extra_outputs(wipi-firmware-release)
 
-add_executable(pifi-firmware-log pifi-firmware.c userport.c rxtx.c)
-target_compile_definitions(pifi-firmware-log PRIVATE
+add_executable(wipi-firmware-log wipi-firmware.c userport.c rxtx.c)
+target_compile_definitions(wipi-firmware-log PRIVATE
     DEBUG=2
 )
-target_include_directories(pifi-firmware-log PRIVATE
+target_include_directories(wipi-firmware-log PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
 )
-target_link_libraries(pifi-firmware-log
+target_link_libraries(wipi-firmware-log
     pico_stdlib
     pico_cyw43_arch_none
 )
-pico_enable_stdio_usb(pifi-firmware-log 1)
-pico_enable_stdio_uart(pifi-firmware-log 0)
-pico_add_extra_outputs(pifi-firmware-log)
+pico_enable_stdio_usb(wipi-firmware-log 1)
+pico_enable_stdio_uart(wipi-firmware-log 0)
+pico_add_extra_outputs(wipi-firmware-log)
 
-add_executable(pifi-firmware-debug pifi-firmware.c userport.c rxtx.c)
-target_compile_definitions(pifi-firmware-debug PRIVATE
+add_executable(wipi-firmware-debug wipi-firmware.c userport.c rxtx.c)
+target_compile_definitions(wipi-firmware-debug PRIVATE
     DEBUG=3
 )
-target_include_directories(pifi-firmware-debug PRIVATE
+target_include_directories(wipi-firmware-debug PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}
 )
-target_link_libraries(pifi-firmware-debug
+target_link_libraries(wipi-firmware-debug
     pico_stdlib
     pico_cyw43_arch_none
 )
-pico_enable_stdio_usb(pifi-firmware-debug 1)
-pico_enable_stdio_uart(pifi-firmware-debug 0)
-pico_add_extra_outputs(pifi-firmware-debug)
+pico_enable_stdio_usb(wipi-firmware-debug 1)
+pico_enable_stdio_uart(wipi-firmware-debug 0)
+pico_add_extra_outputs(wipi-firmware-debug)
