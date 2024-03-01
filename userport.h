@@ -1,7 +1,10 @@
 #ifndef __USERPORT_H__
 #define __USERPORT_H__
 
+#include <stdio.h>
 #include "pico/stdlib.h"
+
+#include "debug.h"
 
 /*
 GPIO Pinout
