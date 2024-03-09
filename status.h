@@ -9,7 +9,8 @@
 typedef struct wipi_status_t {
     bool is_connected;
     int32_t rssi;
-    int8_t channel;
+    uint8_t channel;
+    uint8_t mac[6];
     ip_addr_t ip;
     ip_addr_t gateway;
     ip_addr_t netmask;

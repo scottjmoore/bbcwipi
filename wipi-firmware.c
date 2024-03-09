@@ -24,22 +24,7 @@
 #define WIFI_PASSWORD ""
 #endif
 
-/*
-GPIO Pinout
-
-BBC Userport PB0 <-> GPIO0
-BBC Userport PB1 <-> GPIO1
-BBC Userport PB2 <-> GPIO2
-BBC Userport PB3 <-> GPIO3
-BBC Userport PB4 <-> GPIO4
-BBC Userport PB5 <-> GPIO5
-BBC Userport PB6 <-> GPIO6
-BBC Userport PB7 <-> GPIO7
-BBC Userport CB2 --> GPIO8
-BBC Userport CB1 <-- GPIO9
-
-74LVC245A(1) DIR <-- GPIO10 
-*/
+static const uint32_t command_wipi_status = 0x00;
 
 typedef struct {
     uint8_t command;
@@ -58,16 +43,16 @@ void userport_core_main() {
     char tx_block[256];
 
     while (true) {
+        queue_entry_t userport_entry;
+        queue_entry_t wlan_entry;
+
         rxtx_recv_mode();
         char rx_byte = rxtx_recv_byte();
 
         rxtx_send_mode();
         switch (rx_byte) {
-            case 0x00:
-                queue_entry_t userport_entry;
-                queue_entry_t wlan_entry;
-
-                userport_entry.command = 0;
+            case command_wipi_status:
+                userport_entry.command = command_wipi_status;
                 userport_entry.data = NULL;
                 userport_entry.data_size = 0;
 
@@ -85,6 +70,7 @@ void userport_core_main() {
                 rxtx_send_ip(status->netmask);
                 rxtx_send_block(status->ssid, 32);
                 break;
+                
             case 0x01:
                 rxtx_send_byte(0x55);
                 rxtx_send_byte(0xaa);
@@ -121,6 +107,8 @@ int main()
     }
 
     cyw43_arch_enable_sta_mode();
+
+    bool led_status = true;
     cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
 
     netif_set_hostname(cyw43_state.netif, "bbc-master-wipi");
@@ -140,33 +128,44 @@ int main()
             
             queue_remove_blocking(&userport_queue, &userport_entry);
 
-            if (userport_entry.command == 0) {
-                cyw43_tcpip_link_status(&cyw43_state,CYW43_ITF_STA);
+            switch (userport_entry.command) {
+                case command_wipi_status:
+                    cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA);
 
-                wipi_status_t status;
+                    wipi_status_t wipi_status;
 
-                status.is_connected = true;
-                status.rssi = cyw43_local_get_connection_rssi();
-                status.channel = cyw43_local_get_connection_channel();
-                status.ip = cyw43_state.netif->ip_addr;
-                status.gateway = cyw43_state.netif->gw;
-                status.netmask = cyw43_state.netif->netmask;
-                strncpy(status.ssid, WIFI_SSID, 32);
+                    wipi_status.is_connected = true;
+                    wipi_status.rssi = cyw43_local_get_connection_rssi();
+                    wipi_status.channel = cyw43_local_get_connection_channel();
+                    memcpy(wipi_status.mac, cyw43_state.mac,sizeof(wipi_status.mac));
+                    wipi_status.ip = cyw43_state.netif->ip_addr;
+                    wipi_status.gateway = cyw43_state.netif->gw;
+                    wipi_status.netmask = cyw43_state.netif->netmask;
+                    strncpy(wipi_status.ssid, WIFI_SSID, 32);
 
-                wlan_entry.command = 0;
-                wlan_entry.data = (void*)&status;
-                wlan_entry.data_size = sizeof(wipi_status_t);
+                    wlan_entry.command = command_wipi_status;
+                    wlan_entry.data = (void*)&wipi_status;
+                    wlan_entry.data_size = sizeof(wipi_status_t);
 
-                queue_add_blocking(&wlan_queue, &wlan_entry);
+                    queue_add_blocking(&wlan_queue, &wlan_entry);
+                    break;
             }
         }
 
-        /*
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
-        sleep_ms(900);
-        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
-        sleep_ms(100);
-        */
+        uint32_t ms_since_boot = to_ms_since_boot(get_absolute_time()) % 1000;
+
+        if (ms_since_boot < 900) {
+            if (!led_status) {
+                cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
+                led_status = true;
+            }
+        }
+        else {
+            if (led_status) {
+                cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
+                led_status = false;
+            }
+        }
     }
     
     cyw43_arch_deinit();

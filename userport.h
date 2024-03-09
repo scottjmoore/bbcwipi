@@ -7,19 +7,23 @@
 #include "debug.h"
 
 /*
-GPIO Pinout
+GPIO Pin in/out
 
-BBC Userport PB0 <-> GPIO0
-BBC Userport PB1 <-> GPIO1
-BBC Userport PB2 <-> GPIO2
-BBC Userport PB3 <-> GPIO3
-BBC Userport PB4 <-> GPIO4
-BBC Userport PB5 <-> GPIO5
-BBC Userport PB6 <-> GPIO6
-BBC Userport PB7 <-> GPIO7
-BBC Userport CB2 --> GPIO8
-BBC Userport CB1 <-- GPIO9
+BBC Userport:
+    PB0 <-> 74LVC245A(1) <-> GPIO0
+    PB1 <-> 74LVC245A(1) <-> GPIO1
+    PB2 <-> 74LVC245A(1) <-> GPIO2
+    PB3 <-> 74LVC245A(1) <-> GPIO3
+    PB4 <-> 74LVC245A(1) <-> GPIO4
+    PB5 <-> 74LVC245A(1) <-> GPIO5
+    PB6 <-> 74LVC245A(1) <-> GPIO6
+    PB7 <-> 74LVC245A(1) <-> GPIO7
 
+    CB2 <-> 74LVC245A(2) --> GPIO8
+    CB1 <-> 74LVC245A(2) <-- GPIO9
+
+Hardware Control:
+    74LVC245A(1) DIR <-- GPIO10 
 */
 
 static const int USERPORT_PB0 = 0;
