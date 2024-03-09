@@ -33,6 +33,8 @@ static const int USERPORT_PB7 = 7;
 static const int USERPORT_CB2 = 8;
 static const int USERPORT_CB1 = 9;
 
+static const int BUFFER_PB_DIR = 10;
+
 void userport_init_gpio();
 void userport_set_dir(int dir);
 
