@@ -41,8 +41,6 @@ BBC Userport CB1 <-- GPIO9
 74LVC245A(1) DIR <-- GPIO10 
 */
 
-wipi_status_t status;
-
 typedef struct {
     uint8_t command;
     void* data;
@@ -66,13 +64,26 @@ void userport_core_main() {
         rxtx_send_mode();
         switch (rx_byte) {
             case 0x00:
-                rxtx_send_byte(status.is_connected);
-                rxtx_send_int(status.rssi);
-                rxtx_send_byte(status.channel);
-                rxtx_send_ip(status.ip);
-                rxtx_send_ip(status.gateway);
-                rxtx_send_ip(status.netmask);
-                rxtx_send_block(status.ssid, 32);
+                queue_entry_t userport_entry;
+                queue_entry_t wlan_entry;
+
+                userport_entry.command = 0;
+                userport_entry.data = NULL;
+                userport_entry.data_size = 0;
+
+                queue_add_blocking(&userport_queue, &userport_entry);
+                queue_remove_blocking(&wlan_queue, &wlan_entry);
+
+                wipi_status_t *status;
+                status = (wipi_status_t*)wlan_entry.data;
+
+                rxtx_send_byte(status->is_connected);
+                rxtx_send_int(status->rssi);
+                rxtx_send_byte(status->channel);
+                rxtx_send_ip(status->ip);
+                rxtx_send_ip(status->gateway);
+                rxtx_send_ip(status->netmask);
+                rxtx_send_block(status->ssid, 32);
                 break;
             case 0x01:
                 rxtx_send_byte(0x55);
@@ -104,8 +115,6 @@ int main()
 
     multicore_launch_core1(&userport_core_main);
 
-    status = wipi_status_init();
-
     if (cyw43_arch_init_with_country(CYW43_COUNTRY_UK)) {
         debug(DEBUG_ERR,"Wi-Fi init failed");
         return -1;
@@ -125,21 +134,39 @@ int main()
     }
 
     while (true) {
-        cyw43_tcpip_link_status(&cyw43_state,CYW43_ITF_STA);
+        while (!queue_is_empty(&userport_queue)) {
+            queue_entry_t userport_entry;
+            queue_entry_t wlan_entry;
+            
+            queue_remove_blocking(&userport_queue, &userport_entry);
 
-        status.is_connected = true;
-        status.rssi = cyw43_local_get_connection_rssi();
-        status.channel = cyw43_local_get_connection_channel();
-        status.ip = cyw43_state.netif->ip_addr;
-        status.gateway = cyw43_state.netif->gw;
-        status.netmask = cyw43_state.netif->netmask;
-        strncpy(status.ssid, WIFI_SSID, 32);
-        status.hostname = (char*)(cyw43_state.netif->hostname);
+            if (userport_entry.command == 0) {
+                cyw43_tcpip_link_status(&cyw43_state,CYW43_ITF_STA);
 
+                wipi_status_t status;
+
+                status.is_connected = true;
+                status.rssi = cyw43_local_get_connection_rssi();
+                status.channel = cyw43_local_get_connection_channel();
+                status.ip = cyw43_state.netif->ip_addr;
+                status.gateway = cyw43_state.netif->gw;
+                status.netmask = cyw43_state.netif->netmask;
+                strncpy(status.ssid, WIFI_SSID, 32);
+
+                wlan_entry.command = 0;
+                wlan_entry.data = (void*)&status;
+                wlan_entry.data_size = sizeof(wipi_status_t);
+
+                queue_add_blocking(&wlan_queue, &wlan_entry);
+            }
+        }
+
+        /*
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 1);
         sleep_ms(900);
         cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
         sleep_ms(100);
+        */
     }
     
     cyw43_arch_deinit();
