@@ -23,7 +23,6 @@ void rxtx_recv_mode() {
     debug(DEBUG_INFO, "rxtx_recv_mode()\n");
 
     while (gpio_get(USERPORT_CB2) == 0);
-    gpio_put(10, 1);
     userport_set_dir(GPIO_IN);
 }
 
@@ -31,7 +30,6 @@ void rxtx_send_mode() {
     debug(DEBUG_INFO, "rxtx_send_mode()\n");
 
     while (gpio_get(USERPORT_CB2) == 1);
-    gpio_put(10, 0);
     userport_set_dir(GPIO_OUT);
 }
 

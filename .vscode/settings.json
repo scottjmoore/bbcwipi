@@ -7,6 +7,22 @@
         "string": "c",
         "string_view": "c",
         "span": "c",
-        "vector": "c"
+        "vector": "c",
+        "raw.h": "c",
+        "hash_map": "c",
+        "bitset": "c",
+        "initializer_list": "c",
+        "format": "c",
+        "__hash_table": "c",
+        "__split_buffer": "c",
+        "__tree": "c",
+        "deque": "c",
+        "list": "c",
+        "map": "c",
+        "queue": "c",
+        "set": "c",
+        "stack": "c",
+        "unordered_map": "c",
+        "valarray": "c"
     }
 }
