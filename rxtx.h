@@ -20,8 +20,10 @@ void rxtx_send_mode();
 
 void rxtx_send_byte(char tx_byte);
 char rxtx_recv_byte();
-
-void rxtx_send_int(int tx_int);
+void rxtx_send_word(uint16_t tx_int);
+uint16_t rxtx_recv_word();
+void rxtx_send_dword(uint32_t tx_int);
+uint32_t rxtx_recv_dword();
 
 void rxtx_send_string(const char *tx_str);
 void rxtx_recv_string(char *rx_str, int max_len);

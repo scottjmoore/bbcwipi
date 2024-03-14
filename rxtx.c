@@ -22,14 +22,30 @@ static inline bool rxtx_send_ack_wait_cb2(bool wait_cb2) {
 void rxtx_recv_mode() {
     debug(DEBUG_INFO, "rxtx_recv_mode()\n");
 
-    while (gpio_get(USERPORT_CB2) == 0);
+    while (gpio_get(USERPORT_CB2) == 1);
+    do {
+        sleep_us(1);
+        if (gpio_get(USERPORT_CB2) == 0) {
+            gpio_put(USERPORT_CB1,0);
+            sleep_us(1);
+            gpio_put(USERPORT_CB1,1);
+        }
+    } while (gpio_get(USERPORT_CB2) == 0);
     userport_set_dir(GPIO_IN);
 }
 
 void rxtx_send_mode() {
     debug(DEBUG_INFO, "rxtx_send_mode()\n");
 
-    while (gpio_get(USERPORT_CB2) == 1);
+    while (gpio_get(USERPORT_CB2) == 0);
+    do {
+        sleep_us(1);
+        if (gpio_get(USERPORT_CB2) == 1) {
+            gpio_put(USERPORT_CB1,0);
+            sleep_us(1);
+            gpio_put(USERPORT_CB1,1);
+        }
+    } while (gpio_get(USERPORT_CB2) == 1);
     userport_set_dir(GPIO_OUT);
 }
 
@@ -70,11 +86,36 @@ char rxtx_recv_byte() {
     return rx_byte;
 }
 
-void rxtx_send_int(int tx_int) {
-    rxtx_send_byte(((char*)&tx_int)[0]);
-    rxtx_send_byte(((char*)&tx_int)[1]);
-    rxtx_send_byte(((char*)&tx_int)[2]);
-    rxtx_send_byte(((char*)&tx_int)[3]);
+void rxtx_send_word(uint16_t tx_word) {
+    debug(DEBUG_INFO, "rxtx_send_word(uint16_t tx_word = %04x)\n", tx_word);
+    rxtx_send_byte(((char*)&tx_word)[0]);
+    rxtx_send_byte(((char*)&tx_word)[1]);
+}
+
+uint16_t rxtx_recv_word() {
+    uint16_t rx_word = 0;
+    ((char*)&rx_word)[0] = rxtx_recv_byte();
+    ((char*)&rx_word)[1] = rxtx_recv_byte();
+    debug(DEBUG_INFO, "rxtx_recv_word() = %04x)\n", rx_word);
+    return rx_word;
+}
+
+void rxtx_send_dword(uint32_t tx_dword) {
+    debug(DEBUG_INFO, "rxtx_send_word(uint32_t tx_dword = %08x)\n", tx_dword);
+    rxtx_send_byte(((char*)&tx_dword)[0]);
+    rxtx_send_byte(((char*)&tx_dword)[1]);
+    rxtx_send_byte(((char*)&tx_dword)[2]);
+    rxtx_send_byte(((char*)&tx_dword)[3]);
+}
+
+uint32_t rxtx_recv_dword() {
+    uint32_t rx_dword = 0;
+    ((char*)&rx_dword)[0] = rxtx_recv_byte();
+    ((char*)&rx_dword)[1] = rxtx_recv_byte();
+    ((char*)&rx_dword)[2] = rxtx_recv_byte();
+    ((char*)&rx_dword)[3] = rxtx_recv_byte();
+    debug(DEBUG_INFO, "rxtx_recv_dword() = %08x)\n", rx_dword);
+    return rx_dword;
 }
 
 void rxtx_send_string(const char *tx_str) {
