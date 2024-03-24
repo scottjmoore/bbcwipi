@@ -23,6 +23,8 @@
         "set": "c",
         "stack": "c",
         "unordered_map": "c",
-        "valarray": "c"
+        "valarray": "c",
+        "future": "c",
+        "system_error": "c"
     }
 }

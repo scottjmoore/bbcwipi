@@ -36,6 +36,45 @@ static struct raw_pcb *icmp_pcb;
 static struct raw_pcb *tcp_pcb;
 static struct raw_pcb *udp_pcb;
 
+wipi_status_t wipi_status;
+
+typedef struct {
+    uint8_t command;
+    void* data;
+    uint32_t data_size;
+} queue_entry_t;
+
+queue_t userport_queue;
+queue_t wlan_queue;
+
+typedef struct {
+    void* data;
+    uint32_t data_size;
+} ip_queue_entry_t;
+
+queue_t ip_icmp_queue;
+queue_t ip_tcp_queue;
+queue_t ip_udp_queue;
+
+typedef struct {
+    uint8_t     version_ihl;
+    uint8_t     dscp_ecn;
+    uint16_t    total_length;
+    uint16_t    identification;
+    uint16_t    flags_fragment;
+    uint8_t     ttl;
+    uint8_t     protocol;
+    uint16_t    header_checksum;
+    uint32_t    source_ip;
+    uint32_t    destination_ip;
+} ip_header_t, *ip_header_ptr;
+
+typedef struct {
+    uint8_t     type;
+    uint8_t     code;
+    uint16_t    checksum;
+} icmp_header_t, *icmp_header_ptr;
+
 static const uint8_t* ip_ptos(uint8_t protocol) {
     static const uint8_t* p_1  = "ICMP";
     static const uint8_t* p_2  = "IGMP";
@@ -61,13 +100,11 @@ static uint8_t raw_recv_callback(void *arg, struct raw_pcb *pcb, struct pbuf *p,
 {
     LWIP_ASSERT("p != NULL", p != NULL);
 
+    ip_queue_entry_t ip_icmp_entry;
+
     uint8_t protocol = (pcb)->protocol;
     uint32_t source = ((uint32_t*)addr)[0];
 
-    if (protocol != 1) {
-        return false;
-    }
-    
     debug(DEBUG_LOG,"static uint8_t raw_recv_callback(void *arg, struct raw_pcb *pcb, struct pbuf *p, const ip_addr_t *addr)\n");
     debug(DEBUG_LOG,"\targ         = %08x\n",arg);
     debug(DEBUG_LOG,"\tpcb         = %08x\n",pcb);
@@ -121,103 +158,27 @@ static uint8_t raw_recv_callback(void *arg, struct raw_pcb *pcb, struct pbuf *p,
                 }
             }
             debug(DEBUG_LOG,"\n");
-            break;
 
-        case 6:
-            debug(DEBUG_LOG,"\tTCP Header  = ");
-            for (uint16_t i = 0; i < 20; i++) {
-                debug(DEBUG_LOG,"%02x ", ((uint8_t*)p->payload)[20+i]);
-            }
-            debug(DEBUG_LOG,"\n");
-            debug(DEBUG_LOG,"\tTCP Data    = ");
-            for (uint16_t i = 0; i < ((p->len)-24); i++) {
-                uint8_t data = ((uint8_t*)p->payload)[24+i];
-                debug(DEBUG_LOG,"%02x ", data);
-                if (++c >= 16) {
-                    c = 0;
-                    for (int16_t j = -15; j <= 0; j++) {
-                        uint8_t data = ((uint8_t*)p->payload)[24+i+j];
-                        debug(DEBUG_LOG,"%c", data>31&&data<127?data:'.');
-                    }
-                    debug(DEBUG_LOG,"\n\t              ");
-                }
-            }
-            if (c > 0) {
-                for (uint16_t j = 0; j < (16-c); j++) {
-                    debug(DEBUG_LOG,".. ");
-                }
-                for (int16_t k = -c; k < 0; k++) {
-                    uint8_t data = ((uint8_t*)p->payload)[(p->len)+k];
-                    debug(DEBUG_LOG,"%c", data>31&&data<127?data:'.');
-                }
-            }
-            debug(DEBUG_LOG,"\n");
-            break;
+            ip_icmp_entry.data = p;
+            ip_icmp_entry.data_size = p->len;
 
-        case 17:
-            debug(DEBUG_LOG,"\tUDP Header  = ");
-            for (uint16_t i = 0; i < 8; i++) {
-                debug(DEBUG_LOG,"%02x ", ((uint8_t*)p->payload)[20+i]);
+            if (queue_try_add(&ip_icmp_queue, &ip_icmp_entry)) {
+                debug(DEBUG_LOG,"ICMP Packet added to queue %08x\n\n",p->payload);
+                return 1;
             }
-            debug(DEBUG_LOG,"\n");
-            debug(DEBUG_LOG,"\tUDP Data    = ");
-            for (uint16_t i = 0; i < ((p->len)-24); i++) {
-                uint8_t data = ((uint8_t*)p->payload)[24+i];
-                debug(DEBUG_LOG,"%02x ", data);
-                if (++c >= 16) {
-                    c = 0;
-                    for (int16_t j = -15; j <= 0; j++) {
-                        uint8_t data = ((uint8_t*)p->payload)[24+i+j];
-                        debug(DEBUG_LOG,"%c", data>31&&data<127?data:'.');
-                    }
-                    debug(DEBUG_LOG,"\n\t              ");
-                }
-            }
-            if (c > 0) {
-                for (uint16_t j = 0; j < (16-c); j++) {
-                    debug(DEBUG_LOG,".. ");
-                }
-                for (int16_t k = -c; k < 0; k++) {
-                    uint8_t data = ((uint8_t*)p->payload)[(p->len)+k];
-                    debug(DEBUG_LOG,"%c", data>31&&data<127?data:'.');
-                }
-            }
-            debug(DEBUG_LOG,"\n");
+
             break;
     }
 
     debug(DEBUG_LOG,"\n");
+    debug(DEBUG_LOG,"Packet not accepted\n\n");
 
-    return 0;
-
-    //pbuf_free(p);
-    //return 1; /* eat the packet */
+    return 0; // pass the packet on to rest of the network stack
 }
-
-typedef struct {
-    uint8_t command;
-    void* data;
-    uint32_t data_size;
-} queue_entry_t;
-
-queue_t userport_queue;
-queue_t wlan_queue;
-
-typedef struct {
-    struct pbuf *p;
-    uint32_t data_size;
-} ip_queue_entry_t;
-
-queue_t ip_icmp_queue;
-queue_t ip_tcp_queue;
-queue_t ip_udp_queue;
 
 void userport_core_main() {
     userport_init_gpio();
     userport_set_dir(GPIO_IN);
-
-    char rx_block[256];
-    char tx_block[256];
 
     while (true) {
         queue_entry_t userport_entry;
@@ -237,8 +198,8 @@ void userport_core_main() {
                 queue_add_blocking(&userport_queue, &userport_entry);
                 queue_remove_blocking(&wlan_queue, &wlan_entry);
 
-                wipi_status_t *status;
-                status = (wipi_status_t*)wlan_entry.data;
+                wipi_status_t *status = (wipi_status_t*)wlan_entry.data;
+                //command_status_data_ptr command_status_data;
 
                 rxtx_send_byte(status->is_connected);
                 rxtx_send_dword(status->rssi);
@@ -247,7 +208,6 @@ void userport_core_main() {
                 rxtx_send_ip(status->gateway);
                 rxtx_send_ip(status->netmask);
                 rxtx_send_block(status->ssid, 32);
-
                 break;
                 
             case command_connect:
@@ -273,7 +233,6 @@ void userport_core_main() {
                 queue_remove_blocking(&wlan_queue, &wlan_entry);
 
                 rxtx_send_byte(((command_result_t*)wlan_entry.data)->result);
-
                 break;
 
             case command_disconnect:
@@ -287,23 +246,22 @@ void userport_core_main() {
                 queue_remove_blocking(&wlan_queue, &wlan_entry);
 
                 rxtx_send_byte(((command_result_t*)wlan_entry.data)->result);
-
                 break;
 
             case command_send_icmp:
-                command_send_icmp_data_t send_icmp_data;
+                command_send_icmp_data_t command_send_icmp_data;
 
                 userport_entry.command = command_send_icmp;
-                userport_entry.data = (void *)&send_icmp_data;
-                userport_entry.data_size = sizeof(send_icmp_data);
+                userport_entry.data = (void *)&command_send_icmp_data;
+                userport_entry.data_size = sizeof(command_send_icmp_data);
 
-                send_icmp_data.destination_ip = rxtx_recv_dword();
-                send_icmp_data.type = rxtx_recv_byte();
-                send_icmp_data.code = rxtx_recv_byte();
-                send_icmp_data.packet_size = rxtx_recv_byte();
+                command_send_icmp_data.destination_ip = rxtx_recv_dword();
+                command_send_icmp_data.type = rxtx_recv_byte();
+                command_send_icmp_data.code = rxtx_recv_byte();
+                command_send_icmp_data.packet_size = rxtx_recv_word();
             
-                for (uint8_t i = 0; i < send_icmp_data.packet_size; i++) {
-                    send_icmp_data.packet[i] = rxtx_recv_byte();
+                for (uint16_t i = 0; i < command_send_icmp_data.packet_size; i++) {
+                    command_send_icmp_data.packet_data[i] = rxtx_recv_byte();
                 }
 
                 rxtx_send_mode();
@@ -312,6 +270,31 @@ void userport_core_main() {
                 queue_remove_blocking(&wlan_queue, &wlan_entry);
 
                 rxtx_send_byte(((command_result_t*)wlan_entry.data)->result);
+                break;
+
+            case command_receive_icmp:
+                userport_entry.command = command_receive_icmp;
+                userport_entry.data = NULL;
+                userport_entry.data_size = 0;
+
+                rxtx_send_mode();
+
+                queue_add_blocking(&userport_queue, &userport_entry);
+                queue_remove_blocking(&wlan_queue, &wlan_entry);
+
+                command_receive_icmp_data_ptr command_receive_icmp_data = wlan_entry.data;
+
+                rxtx_send_dword(command_receive_icmp_data->source_ip);
+                rxtx_send_byte(command_receive_icmp_data->type);
+                rxtx_send_byte(command_receive_icmp_data->code);
+                rxtx_send_word(command_receive_icmp_data->packet_size);
+
+                if (command_receive_icmp_data->packet_size > 0) {
+                    for (uint16_t i = 0; i < command_receive_icmp_data->packet_size; i++) {
+                        rxtx_send_byte(command_receive_icmp_data->packet_data[i]);
+                    }
+                }
+                break;
 
             default:
                 break;
@@ -335,8 +318,11 @@ int main()
 {
     stdio_init_all();
 
-    queue_init(&userport_queue, sizeof(queue_entry_t), 16);
-    queue_init(&wlan_queue, sizeof(queue_entry_t), 16);
+    queue_init(&userport_queue, sizeof(queue_entry_t), 2);
+    queue_init(&wlan_queue, sizeof(queue_entry_t), 2);
+    queue_init(&ip_icmp_queue, sizeof(queue_entry_t), 8);
+    queue_init(&ip_tcp_queue, sizeof(queue_entry_t), 8);
+    queue_init(&ip_udp_queue, sizeof(queue_entry_t), 8);
 
     multicore_launch_core1(&userport_core_main);
 
@@ -361,16 +347,15 @@ int main()
 
     raw_recv(icmp_pcb, raw_recv_callback, NULL);
     raw_bind(icmp_pcb, IP_ADDR_ANY);
-    raw_recv(tcp_pcb, raw_recv_callback, NULL);
-    raw_bind(tcp_pcb, IP_ADDR_ANY);
-    raw_recv(udp_pcb, raw_recv_callback, NULL);
-    raw_bind(udp_pcb, IP_ADDR_ANY);
+    //raw_recv(tcp_pcb, raw_recv_callback, NULL);
+    //raw_bind(tcp_pcb, IP_ADDR_ANY);
+    //raw_recv(udp_pcb, raw_recv_callback, NULL);
+    //raw_bind(udp_pcb, IP_ADDR_ANY);
 
     while (true) {
         while (!queue_is_empty(&userport_queue)) {
             queue_entry_t userport_entry;
             queue_entry_t wlan_entry;
-            ip_queue_entry_t ip_icmp_entry;
             command_result_t command_result;
 
             queue_remove_blocking(&userport_queue, &userport_entry);
@@ -379,8 +364,6 @@ int main()
 
             switch (userport_entry.command) {
                 case command_wipi_status:
-                    wipi_status_t wipi_status;
-
                     //debug(DEBUG_LOG,"WLAN status requested\n");
 
                     cyw43_tcpip_link_status(&cyw43_state, CYW43_ITF_STA);
@@ -402,7 +385,7 @@ int main()
                     break;
 
                 case command_connect:
-                    command_connect_data_t *command_connect_data = userport_entry.data;
+                    command_connect_data_ptr command_connect_data = userport_entry.data;
 
                     debug(DEBUG_LOG,"Connecting to SSID : %s (timeout = %d)\n",
                         command_connect_data->ssid,
@@ -450,7 +433,7 @@ int main()
                     break;
 
                 case command_send_icmp:
-                    command_send_icmp_data_t *command_send_icmp_data = userport_entry.data;
+                    command_send_icmp_data_ptr command_send_icmp_data = userport_entry.data;
 
                     debug(DEBUG_LOG,"Sending ICMP packet\n");
 
@@ -460,10 +443,10 @@ int main()
                     debug(DEBUG_LOG,"\tPacket Size      = %d\n",command_send_icmp_data->packet_size);
 
                     if (command_send_icmp_data->packet_size > 0) {
-                        debug(DEBUG_LOG,"\tPacket           = ",command_send_icmp_data->packet_size);
+                        debug(DEBUG_LOG,"\tPacket           = ");
 
-                        for (uint8_t i = 0; i<command_send_icmp_data->packet_size; i++) {
-                            uint8_t c = command_send_icmp_data->packet[i];
+                        for (uint16_t i = 0; i<command_send_icmp_data->packet_size; i++) {
+                            uint8_t c = command_send_icmp_data->packet_data[i];
                             debug(DEBUG_LOG,"%c",(c>31)&&(c<127)?c:'.');
                         }
                         debug(DEBUG_LOG,"\n\n");
@@ -474,16 +457,16 @@ int main()
                     wlan_entry.data_size = 0;
 
                     struct pbuf *p;
-
                     struct icmp_hdr *icmp;
     
-                    size_t icmp_size = sizeof(struct icmp_hdr) + command_send_icmp_data->packet_size;
+                    size_t icmp_size = 4 + command_send_icmp_data->packet_size;
 
                     p = pbuf_alloc(PBUF_IP, (u16_t)icmp_size, PBUF_RAM);
                     if (!p) {
                         command_result.result = false;
                         wlan_entry.data = (void *)&command_result;
                         queue_add_blocking(&wlan_queue, &wlan_entry);
+                        break;
                     }
                     if ((p->len == p->tot_len) && (p->next == NULL)) {
                         icmp = (struct icmp_hdr *)p->payload;
@@ -491,8 +474,8 @@ int main()
                         icmp->type = command_send_icmp_data->type;
                         icmp->code = command_send_icmp_data->code;
 
-                        for(uint32_t i = 0; i < command_send_icmp_data->packet_size; i++) {
-                            ((char*)icmp)[sizeof(struct icmp_hdr) + i] = command_send_icmp_data->packet[i];
+                        for(uint16_t i = 0; i < command_send_icmp_data->packet_size; i++) {
+                            ((uint8_t*)icmp)[4 + i] = command_send_icmp_data->packet_data[i];
                         }
 
                         icmp->chksum = inet_chksum(icmp, icmp_size);
@@ -504,8 +487,63 @@ int main()
                     command_result.result = true;
                     wlan_entry.data = (void *)&command_result;
                     queue_add_blocking(&wlan_queue, &wlan_entry);
-                    //queue_add_blocking(&ip_icmp_queue, &ip_icmp_entry);
                     break;
+                case command_receive_icmp:
+                    command_receive_icmp_data_t command_receive_icmp_data;
+
+                    debug(DEBUG_LOG,"Receiving ICMP packet\n");
+
+                    wlan_entry.command = command_receive_icmp;
+                    wlan_entry.data = &command_receive_icmp_data;
+                    wlan_entry.data_size = sizeof(command_receive_icmp_data_t);
+
+                    ip_queue_entry_t ip_icmp_entry;
+                    bool res;
+
+                    res=queue_try_peek(&ip_icmp_queue, &ip_icmp_entry);
+                    debug(DEBUG_LOG,"queue_try_peek(&ip_icmp_queue, &ip_icmp_entry)=%d\n",res);
+
+                    if (!res) {
+                        command_receive_icmp_data.source_ip = 0x00000000;
+                        command_receive_icmp_data.code = 0;
+                        command_receive_icmp_data.type = 0;
+                        command_receive_icmp_data.packet_size = 0;
+                    } else
+                    {
+                        if (queue_try_remove(&ip_icmp_queue, &ip_icmp_entry)) {
+                            struct pbuf *p = ip_icmp_entry.data;
+
+                            debug(DEBUG_LOG,"ICMP Packet removed from queue %08x\n\n",p->payload);
+                            ip_header_t ip_header;
+                            icmp_header_t icmp_header;
+
+                            memcpy(&ip_header, p->payload, sizeof(ip_header_t));
+                            memcpy(&icmp_header,((uint8_t*)(p->payload))+sizeof(ip_header_t),sizeof(icmp_header_t));
+                            debug(DEBUG_LOG,"Source IP = %08x (%d)\n",ip_header.source_ip,sizeof(ip_header_t));
+                            debug(DEBUG_LOG,"Type      = %02x\n",icmp_header.type);
+                            debug(DEBUG_LOG,"Code      = %02x\n",icmp_header.code);
+                            debug(DEBUG_LOG,"%d, %d, %d\n",p->len,sizeof(ip_header_t), sizeof(icmp_header_t));
+                            command_receive_icmp_data.source_ip = ip_header.source_ip;
+                            command_receive_icmp_data.type = icmp_header.type;
+                            command_receive_icmp_data.code = icmp_header.code;
+                            command_receive_icmp_data.packet_size = (p->len)-sizeof(ip_header_t)-sizeof(icmp_header_t);
+                            
+                            debug(DEBUG_LOG,"Source IP = %08x\n",command_receive_icmp_data.source_ip);
+                            debug(DEBUG_LOG,"Type      = %02x\n",command_receive_icmp_data.type);
+                            debug(DEBUG_LOG,"Code      = %02x\n",command_receive_icmp_data.code);
+                            debug(DEBUG_LOG,"Size      = %d\n",command_receive_icmp_data.packet_size);
+
+                            for (uint16_t i = 0; i < command_receive_icmp_data.packet_size; i++) {
+                                command_receive_icmp_data.packet_data[i] = ((uint8_t*)(p->payload))[sizeof(ip_header_t)+sizeof(icmp_header_t)+i];
+                            }
+                            
+                            pbuf_free(p);
+                        }
+                    }
+
+                    queue_add_blocking(&wlan_queue, &wlan_entry);
+                    break;
+
             }
         }
 
@@ -521,7 +559,6 @@ int main()
             if (led_status) {
                 cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, 0);
                 led_status = false;
-
             }
         }
     }

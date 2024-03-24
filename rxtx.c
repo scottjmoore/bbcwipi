@@ -49,8 +49,8 @@ void rxtx_send_mode() {
     userport_set_dir(GPIO_OUT);
 }
 
-void rxtx_send_byte(char tx_byte) {
-    debug(DEBUG_INFO, "rxtx_send_byte(char tx_byte = %02x:'%c')\n", tx_byte, (tx_byte>=32) && (tx_byte<=126) ? tx_byte : '.');
+void rxtx_send_byte(uint8_t tx_byte) {
+    debug(DEBUG_INFO, "rxtx_send_byte(uint8_t tx_byte = %02x:'%c')\n", tx_byte, (tx_byte>=32) && (tx_byte<=126) ? tx_byte : '.');
 
     while (gpio_get(USERPORT_CB2) == 0);
     
@@ -66,10 +66,10 @@ void rxtx_send_byte(char tx_byte) {
     rxtx_send_ack_wait_cb2(1);
 }
 
-char rxtx_recv_byte() {
+uint8_t rxtx_recv_byte() {
     while (gpio_get(USERPORT_CB2) == 1);
 
-    char rx_byte = 
+    uint8_t rx_byte = 
         gpio_get(USERPORT_PB0) |
         gpio_get(USERPORT_PB1) << 1 |
         gpio_get(USERPORT_PB2) << 2 |
@@ -88,45 +88,45 @@ char rxtx_recv_byte() {
 
 void rxtx_send_word(uint16_t tx_word) {
     debug(DEBUG_INFO, "rxtx_send_word(uint16_t tx_word = %04x)\n", tx_word);
-    rxtx_send_byte(((char*)&tx_word)[0]);
-    rxtx_send_byte(((char*)&tx_word)[1]);
+    rxtx_send_byte(((uint8_t*)&tx_word)[0]);
+    rxtx_send_byte(((uint8_t*)&tx_word)[1]);
 }
 
 uint16_t rxtx_recv_word() {
     uint16_t rx_word = 0;
-    ((char*)&rx_word)[0] = rxtx_recv_byte();
-    ((char*)&rx_word)[1] = rxtx_recv_byte();
+    ((uint8_t*)&rx_word)[0] = rxtx_recv_byte();
+    ((uint8_t*)&rx_word)[1] = rxtx_recv_byte();
     debug(DEBUG_INFO, "rxtx_recv_word() = %04x)\n", rx_word);
     return rx_word;
 }
 
 void rxtx_send_dword(uint32_t tx_dword) {
-    debug(DEBUG_INFO, "rxtx_send_word(uint32_t tx_dword = %08x)\n", tx_dword);
-    rxtx_send_byte(((char*)&tx_dword)[0]);
-    rxtx_send_byte(((char*)&tx_dword)[1]);
-    rxtx_send_byte(((char*)&tx_dword)[2]);
-    rxtx_send_byte(((char*)&tx_dword)[3]);
+    debug(DEBUG_INFO, "rxtx_send_dword(uint32_t tx_dword = %08x)\n", tx_dword);
+    rxtx_send_byte(((uint8_t*)&tx_dword)[0]);
+    rxtx_send_byte(((uint8_t*)&tx_dword)[1]);
+    rxtx_send_byte(((uint8_t*)&tx_dword)[2]);
+    rxtx_send_byte(((uint8_t*)&tx_dword)[3]);
 }
 
 uint32_t rxtx_recv_dword() {
     uint32_t rx_dword = 0;
-    ((char*)&rx_dword)[0] = rxtx_recv_byte();
-    ((char*)&rx_dword)[1] = rxtx_recv_byte();
-    ((char*)&rx_dword)[2] = rxtx_recv_byte();
-    ((char*)&rx_dword)[3] = rxtx_recv_byte();
+    ((uint8_t*)&rx_dword)[0] = rxtx_recv_byte();
+    ((uint8_t*)&rx_dword)[1] = rxtx_recv_byte();
+    ((uint8_t*)&rx_dword)[2] = rxtx_recv_byte();
+    ((uint8_t*)&rx_dword)[3] = rxtx_recv_byte();
     debug(DEBUG_INFO, "rxtx_recv_dword() = %08x)\n", rx_dword);
     return rx_dword;
 }
 
-void rxtx_send_string(const char *tx_str) {
-    debug(DEBUG_INFO, "rxtx_send_string(const char *tx_str = '%s')\n",tx_str);
+void rxtx_send_string(const uint8_t *tx_str) {
+    debug(DEBUG_INFO, "rxtx_send_string(const uint8_t *tx_str = '%s')\n",tx_str);
 
     do {
         rxtx_send_byte(*tx_str);
     } while (*(tx_str++));
 }
 
-void rxtx_recv_string(char *rx_str, int max_len) {
+void rxtx_recv_string(uint8_t *rx_str, int max_len) {
     int i = 0;
     while (i < max_len) {
         rx_str[i] = rxtx_recv_byte();
@@ -135,11 +135,11 @@ void rxtx_recv_string(char *rx_str, int max_len) {
     }
     rx_str[i] = 0;
 
-    debug(DEBUG_INFO, "rxtx_recv_string(char *tx_str = '%s', int max_len = %d)\n",rx_str,max_len);
+    debug(DEBUG_INFO, "rxtx_recv_string(uint8_t *tx_str = '%s', int max_len = %d)\n",rx_str,max_len);
 }
 
-void rxtx_send_block(const char *tx_block, int size) {
-    debug(DEBUG_INFO, "rxtx_send_block(const char *tx_block = {...}, int size = %d)\n",size);
+void rxtx_send_block(const uint8_t *tx_block, int size) {
+    debug(DEBUG_INFO, "rxtx_send_block(const uint8_t *tx_block = {...}, int size = %d)\n",size);
 
     int i = 0;
     while (i < size) {
@@ -147,8 +147,8 @@ void rxtx_send_block(const char *tx_block, int size) {
     }
 }
 
-void rxtx_recv_block(char *rx_block, int size) {
-    debug(DEBUG_INFO, "rxtx_recv_block(char *rx_block = {...}, int size = %d)\n",size);
+void rxtx_recv_block(uint8_t *rx_block, int size) {
+    debug(DEBUG_INFO, "rxtx_recv_block(uint8_t *rx_block = {...}, int size = %d)\n",size);
 
     int i = 0;
     while (i < size) {
@@ -157,8 +157,8 @@ void rxtx_recv_block(char *rx_block, int size) {
 }
 
 void rxtx_send_ip(const ip_addr_t tx_ip) {
-    rxtx_send_byte(((char*)(&(tx_ip)))[0]);
-    rxtx_send_byte(((char*)(&(tx_ip)))[1]);
-    rxtx_send_byte(((char*)(&(tx_ip)))[2]);
-    rxtx_send_byte(((char*)(&(tx_ip)))[3]);
+    rxtx_send_byte(((uint8_t*)(&(tx_ip)))[0]);
+    rxtx_send_byte(((uint8_t*)(&(tx_ip)))[1]);
+    rxtx_send_byte(((uint8_t*)(&(tx_ip)))[2]);
+    rxtx_send_byte(((uint8_t*)(&(tx_ip)))[3]);
 }

@@ -54,7 +54,7 @@ target_link_libraries(wipi-firmware-debug
     pico_cyw43_arch_lwip_threadsafe_background
 )
 
-pico_enable_stdio_usb(wipi-firmware-release 1)
+pico_enable_stdio_usb(wipi-firmware-release 0)
 pico_enable_stdio_uart(wipi-firmware-release 0)
 pico_add_extra_outputs(wipi-firmware-release)
 
