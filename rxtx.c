@@ -119,10 +119,14 @@ uint32_t rxtx_recv_dword() {
 }
 
 void rxtx_send_string(const uint8_t *tx_str) {
-    debug(DEBUG_INFO, "rxtx_send_string(const uint8_t *tx_str = '%s')\n",tx_str);
+    debug(DEBUG_INFO, "rxtx_send_string(const uint8_t *tx_str = '%s')\n", tx_str);
 
     do {
-        rxtx_send_byte(*tx_str);
+        if (*tx_str != 0x00)
+            rxtx_send_byte(*tx_str);
+        else
+            rxtx_send_byte('\r');
+
     } while (*(tx_str++));
 }
 
@@ -131,15 +135,16 @@ void rxtx_recv_string(uint8_t *rx_str, int max_len) {
     while (i < max_len) {
         rx_str[i] = rxtx_recv_byte();
         if (rx_str[i] == '\r') break;
+        if (rx_str[i] == 0x00) break;
         i++;
     }
     rx_str[i] = 0;
 
-    debug(DEBUG_INFO, "rxtx_recv_string(uint8_t *tx_str = '%s', int max_len = %d)\n",rx_str,max_len);
+    debug(DEBUG_INFO, "rxtx_recv_string(uint8_t *tx_str = '%s', int max_len = %d)\n", rx_str,max_len);
 }
 
 void rxtx_send_block(const uint8_t *tx_block, int size) {
-    debug(DEBUG_INFO, "rxtx_send_block(const uint8_t *tx_block = {...}, int size = %d)\n",size);
+    debug(DEBUG_INFO, "rxtx_send_block(const uint8_t *tx_block = {...}, int size = %d)\n", size);
 
     int i = 0;
     while (i < size) {
