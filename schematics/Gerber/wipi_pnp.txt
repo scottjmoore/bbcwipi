@@ -1,0 +1,60 @@
+*Pick And Place List
+*Company=
+*Author=
+*eMail=
+*
+*Project=wipi
+*Date=02:12:42
+*CreatedBy=Fritzing 0.9.9b..
+*
+*
+*Coordinates in mm, always center of component
+*Origin 0/0=Lower left corner of PCB
+*Rotation in degree (0-360, math. pos.)
+*
+*No;Value;Package;X;Y;Rotation;Side;Name
+1;;;53.5547;-40.7915;0;Bottom;Via1
+2;;THT;30.6999;-21.7165;90;Bottom;1-20
+3;;;11.6499;-34.4165;0;Bottom;Via12
+4;;THT;20.5399;-49.6565;-90;Bottom;1
+5;;;44.6532;-29.9854;0;Bottom;Copper Fill2
+6;;;5.7404;-44.6031;0;Bottom;Copper Fill5
+7;;;24.3499;-39.4965;0;Bottom;Via18
+8;;;21.8099;-47.1165;0;Bottom;Via6
+9;;;6.5532;-43.8284;0;Bottom;Copper Fill4
+10;;;54.8132;-32.6651;0;Bottom;Copper Fill11
+11;;;35.2516;-26.3015;0;Bottom;TXT2
+12;;;6.5532;-45.4032;0;Bottom;Copper Fill3
+13;;;11.6499;-47.1165;0;Bottom;Via2
+14;;;54.8299;-24.2565;0;Bottom;Via17
+15;;;34.5188;-30.2651;0;Bottom;TXT1
+16;;300 mil [THT];43.4253;-48.3865;180;Bottom;D1
+17;;;54.8132;-31.1919;0;Bottom;Copper Fill12
+18;;;3.4544;-42.0504;0;Bottom;Copper Fill8
+19;;;16.7299;-47.1165;0;Bottom;Via4
+20;;;16.7299;-34.4165;0;Bottom;Via14
+21;;THT;48.4799;-52.1965;90;Bottom;Ext. Power
+22;;;9.10989;-34.4165;0;Bottom;Via11
+23;;;9.10989;-47.1165;0;Bottom;Via9
+24;;;54.0512;-31.9158;0;Bottom;Copper Fill13
+25;;;2.7432;-42.8124;0;Bottom;Copper Fill6
+26;;;48.4799;-40.7665;180;Bottom;74LVC245
+27;;;48.5271;-50.0308;0;Bottom;TXT3
+28;;cap-pth-small2;56.0999;-31.8765;180;Bottom;C1
+29;;;19.2699;-34.4165;0;Bottom;Via15
+30;;cap-pth-small2;2.75989;-40.7665;-90;Bottom;C2
+31;;;33.2486;-28.9694;0;Bottom;Copper Fill1
+32;;;6.56989;-34.4165;0;Bottom;Via10
+33;;;33.2486;-28.9694;0;Bottom;Copper Fill9
+34;;;50.5968;-52.2104;0;Bottom;Copper Fill10
+35;;;26.8899;-47.1165;0;Bottom;Via8
+36;;;52.2899;-24.2565;0;Bottom;Via16
+37;;;1.9812;-42.0504;0;Bottom;Copper Fill7
+38;;;14.1899;-47.1165;0;Bottom;Via3
+39;;THT;30.7103;-3.96335;90;Bottom;21-40
+40;;THT;20.5399;-52.1965;-90;Bottom;Userport
+41;;;24.3499;-47.1165;0;Bottom;Via7
+42;;;14.1899;-34.4165;0;Bottom;Via13
+43;;;19.2699;-47.1165;0;Bottom;Via5
+44;;;17.9999;-40.7665;180;Bottom;74LVC245
+45;;THT;39.5899;-52.1965;90;Bottom;Int 5v : Ext 5v
